@@ -1,95 +1,67 @@
 // App.js
-import React, { useState } from 'react';
-import './App.css'; // Import file CSS
-
-// 3. Component cháu: StudentItem
-const StudentItem = ({ name, score }) => {
-  // Logic kiểm tra Đạt/Trượt
-  const isPassed = parseFloat(score) >= 5;
-  const statusText = isPassed ? 'Đạt' : 'Trượt';
-  
-  // Gán class CSS linh hoạt dựa trên trạng thái (Template Literals)
-  const statusClass = isPassed ? 'status-passed' : 'status-failed';
-
+import logo from './logo.svg';
+import './App.css'; // 
+import {useEffect , useState} from 'react';
+const StudentItem = ({ student, onDelete }) => {
+  const { id, name, score, class: cls } = student;
   return (
-    <li className={`student-item ${statusClass}`}>
-      {`Họ tên: ${name} - Điểm: ${score} (${statusText})`}
-    </li>
+    <tr>
+      <td>{id}</td><td>{name}</td><td>{score}</td><td>{cls}</td>
+      <td><button onClick={() => onDelete(id)}>Xóa</button></td>
+    </tr>
   );
 };
 
-// 2. Component con: StudentList
-const StudentList = ({ students }) => {
-  return (
-    <ul>
-      {students.map((student, index) => (
-        <StudentItem key={index} name={student.name} score={student.score} />
-      ))}
-    </ul>
-  );
-};
+const StudentTable = ({ students, onDelete }) => (
+  <table border="1">
+    <tbody>
+      {students.map(s => <StudentItem key={s.id} student={s} onDelete={onDelete} />)}
+    </tbody>
+  </table>
+);
 
-// 1. Component cha: App
 const App = () => {
-  // State quản lý danh sách sinh viên
-  const [students, setStudents] = useState([
-    { name: 'Nguyễn Văn A', score: 8.5 },
-    { name: 'Trần Thị B', score: 4 },
-    { name: 'dm đông ma', score: 20000000000 }
+  const [list, setList] = useState([
+    { id: 'B25DCCC151', name: 'Nguyễn Hải Nam', score: 9, class: 'D25' },
+    { id: 'B25DCCC010', name: 'Trần Thị B', score: 4, class: 'D25' },
+    { id: 'B25DCCC011', name: 'Lê Văn C', score: 7, class: 'D25' }
   ]);
+  
+  const [filter, setFilter] = useState('ALL');
+  const [form, setForm] = useState({ name: '', score: '', class: '' });
+  const { name, score, class: cls } = form; 
 
-  // State quản lý form
-  const [newName, setNewName] = useState('');
-  const [newScore, setNewScore] = useState('');
-
-  // Hàm xử lý thêm sinh viên
-  const handleAddStudent = (e) => {
-    e.preventDefault(); 
+  const handleAdd = (e) => {
+    e.preventDefault();
+    if (!name || !score || !cls) return alert('Không được để trống!');
+    if (score < 0 || score > 10) return alert('Điểm không hợp lệ!');
     
-    if (!newName.trim() || !newScore.trim()) {
-      alert('Vui lòng nhập đầy đủ tên và điểm!');
-      return;
-    }
-
-    const newStudent = { name: newName, score: newScore };
-    
-    // Cập nhật danh sách mới
-    setStudents([...students, newStudent]);
-    
-    // Làm sạch form
-    setNewName('');
-    setNewScore('');
+    setList([...list, { id: Date.now(), name, score: parseFloat(score), class: cls }]);
+    setForm({ name: '', score: '', class: '' }); 
   };
 
+  const displayed = list.filter(s => filter === 'G' ? s.score >= 8 : filter === 'T' ? s.score < 5 : true);
+  const avg = list.length ? (list.reduce((sum, s) => sum + s.score, 0) / list.length).toFixed(1) : 0;
+
   return (
-    <div className="container">
-      <h1 className="heading">Xin chào!!!</h1>
-      <h2 className="heading">Quản lý điểm sinh viên</h2>
-
-      <form className="form-group" onSubmit={handleAddStudent}>
-        <input
-          type="text"
-          placeholder="Tên sinh viên"
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          className="input-field"
-        />
-        <input
-          type="number"
-          step="0.1"
-          placeholder="Điểm số"
-          value={newScore}
-          onChange={(e) => setNewScore(e.target.value)}
-          className="input-field"
-        />
-        <button type="submit" className="btn-submit">
-          Thêm sinh viên
-        </button>
+    <div>
+      <form onSubmit={handleAdd}>
+        <input value={name} placeholder="Họ tên" onChange={e => setForm({...form, name: e.target.value})} />
+        <input value={score} type="number" placeholder="Điểm" onChange={e => setForm({...form, score: e.target.value})} />
+        <input value={cls} placeholder="Lớp" onChange={e => setForm({...form, class: e.target.value})} />
+        <button type="submit">Thêm</button>
       </form>
+      
+      <div style={{ margin: '10px 0' }}>
+        <button onClick={() => setFilter('ALL')}>Tất cả</button>
+        <button onClick={() => setFilter('G')}>Giỏi</button>
+        <button onClick={() => setFilter('T')}>Trượt</button>
+      </div>
 
-      <StudentList students={students} />
+      <p>{`Tổng SV: ${list.length} | Điểm TB cả lớp: ${avg}`}</p>
+      
+      <StudentTable students={displayed} onDelete={(id) => setList(list.filter(s => s.id !== id))} />
     </div>
   );
 };
-
 export default App;
